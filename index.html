@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Socket</title>
+    <style>
+        form {
+            margin-bottom: 10px;
+        }
+
+        input {
+            min-width: 300px;
+        }
+    </style>
+    <script src="https://cdn.socket.io/4.2.0/socket.io.min.js"
+            integrity="sha384-PiBR5S00EtOj2Lto9Uu81cmoyZqR57XcOna1oAuVuIEjzj0wpqDVfD0JA9eXlRsj"
+            crossorigin="anonymous"></script>
+</head>
+<body>
+<form action="#">
+    <input id="input-read" type="text" placeholder="Путь до файла/директории или пустой запрос" autofocus>
+    <button id="button-read">Отправить</button>
+</form>
+<form action="#">
+    <input id="input-search" type="text" placeholder="Текст для поиска">
+    <button id="button-search">Отправить</button>
+</form>
+<div id="messages"></div>
+<script>
+    const socket = io('localhost:5555');
+    const messageBlock = document.querySelector('#messages');
+    const sendButtonRead = document.querySelector('#button-read');
+    const sendButtonSearch = document.querySelector('#button-search');
+    const inputRead = document.querySelector('#input-read');
+    const inputSearch = document.querySelector('#input-search');
+
+    sendButtonRead.addEventListener('click', () => {
+        const data = {
+            message: inputRead.value,
+        };
+
+        socket.emit('client-msg-to-read', data.message);
+        inputRead.value = '';
+    });
+
+    sendButtonSearch.addEventListener('click', () => {
+        const data = {
+            message: inputSearch.value,
+            text: messageBlock.innerHTML
+        };
+
+        socket.emit('client-msg-to-search', data);
+        inputSearch.value = '';
+    });
+
+    const forward = (value) => {
+        inputRead.value = value;
+    }
+
+    socket.on('connect', () => {
+        console.log('Connected!');
+    });
+
+    socket.on('server-msg', payload => {
+        console.log(payload.message);
+    });
+
+    socket.on('server-msg-reader', result => {
+        messageBlock.innerHTML = `<div>${result.data}</div>`;
+        if (result.filePath) {
+            socket.emit('change-filepath', result.filePath);
+        }
+    });
+    socket.on('server-msg-search', result => {
+        messageBlock.innerHTML = `<div>${result}</div>`;
+    });
+
+    socket.on('broadcast', function (data) {
+        console.log(data.description)
+    });
+    socket.on('broadcast-request-server', function (data) {
+        console.log(data.description);
+    });
+    socket.on('new-client-connected', (data) => {
+        console.log(data.description)
+    });
+    socket.on('new-client-greet', (data) => {
+        console.log(data.description)
+    });
+
+</script>
+</body>
+</html>
